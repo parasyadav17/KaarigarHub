@@ -2,54 +2,57 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const User = require("../models/User");
 
+// const jwt = require("jsonwebtoken");
+
 exports.auth = async (req, res, next) => {
   try {
-    //extract token
+    // Extract token from cookies, body, or Authorization header
     const token =
-      req.cookies.token ||
-      req.body.token ||
-      req.header("Authorization").replace("Bearer", "");
+      req.cookies?.token ||
+      req.body?.token ||
+      req.header("Authorization")?.replace("Bearer ", "");
 
-    //if token missing then return response
+    // If token is missing
     if (!token) {
       return res.status(401).json({
-        success: false.valueOf,
+        success: false,
         message: "Token is missing",
       });
     }
 
-    //verify token
     try {
-      const decode = jwt.verify(token, process.env.JWT_SECRET);
-      console.log(decode);
-      req.user = decode;
+      // Verify the token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded; // Attach user info to request
+      next(); // Move to next middleware/controller
     } catch (error) {
-      //verification - issue
+      // Token verification failed
       return res.status(401).json({
         success: false,
-        message: "token is invalid",
+        message: "Token is invalid or expired",
       });
     }
-    console.log(token);
-    next();
   } catch (error) {
-    return res.status(401).json({
+    // General error during auth process
+    return res.status(500).json({
       success: false,
-      message: "spmething went wrong while validating the token",
+      message: "Something went wrong while validating the token",
     });
   }
 };
+
 
 //isWorker
 
 exports.isWorker = async (req, res, next) => {
   try {
     if (req.user.accountType != "Worker") {
-      return res.status(500).json({
+      return res.status(403).json({
         success: false,
         message: "This is protected route for Workers only",
       });
     }
+    next();
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -78,14 +81,14 @@ exports.isContractor = async (req, res, next) => {
 };
 
 //isAdmin
-exports.isAdmin= async (req, res, next) => {
+exports.isAdmin = async (req, res, next) => {
   try {
     if (req.user.accountType != "Admin") {
       return res.status(500).json({
         success: false,
         message: "This is protected route for Admin only",
       });
-      
+
     }
     next();
   } catch (error) {

@@ -17,35 +17,48 @@ const jobSchema = new mongoose.Schema({
     required: true,
   },
   whatYouWillDo: {
-    trype: String,
+    type: String,
   },
-  jobContent: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Section",
+  location: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["Open", "Assigned", "Completed"],
+    default: "Open",
   },
   ratingAndReviews: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "RatingAndReviews",
   },
-  rate:{
-    type:Number,
-    
-  },
-  thumbnail:{
-    type:String,
-
-  },
-  category:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"Category",
-  },
-  workersEnrolled:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "user",
+  rate: {
+    type: Number,
     required: true,
-
-  }]
-   
+  },
+  thumbnail: {
+    type: String,
+  },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+  },
+  applicants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }],
+  workersEnrolled: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }],
+  rejectedApplicants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Job", jobSchema);

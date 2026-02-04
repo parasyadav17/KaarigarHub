@@ -9,11 +9,12 @@ exports.updateProfile = async (require, res) => {
       about = "",
       contactNumber,
       gender,
+      companyName,
     } = require.body;
     //fetch user
     const id = require.user.id;
     //validate
-    if (!contactNumber || !gender || !id) {
+    if (!contactNumber || !gender || !companyName || !dateOfBirth || !id) {
       return res.status(400).json({
         success: false,
         message: "All fields required",
@@ -28,6 +29,7 @@ exports.updateProfile = async (require, res) => {
     profileDetails.about = about;
     profileDetails.gender = gender;
     profileDetails.contactNumber = contactNumber;
+    profileDetails.companyName = companyName;
     await profileDetails.save();
     //return res
     return res.status(200).json({

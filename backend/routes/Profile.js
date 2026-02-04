@@ -12,8 +12,8 @@ const {
 const { isDemo } = require("../midddlewares/demo");
 
 // Delet User Account
-router.delete("/deleteProfile",auth,isDemo,deleteAccount)
-router.put("/updateProfile", auth,isDemo, updateProfile)
+router.delete("/deleteProfile",auth,deleteAccount)
+router.put("/updateProfile", auth, updateProfile)
 router.get("/getUserDetails", auth, getAllUserDetails)
 // Get Enrolled Jobs
 // router.get("/getEnrolledJobs", auth, getEnrolledJobs)

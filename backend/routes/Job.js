@@ -10,12 +10,13 @@ const router = express.Router()
 // Job Controllers Import
 const {
   createJob,
-  // getAllJobs,
+  showAllJobs,
   getJobDetails,
   getContractorJobs,
   editJob,
   // getFullJobDetails,
   deleteJob,
+  applyForJob,
   // searchJob,
   // markLectureAsComplete,
 } = require("../controllers/Job")
@@ -29,19 +30,7 @@ const {
   // addJobToCategory,
 } = require("../controllers/Category")
 
-// Sections Controllers Import
-const {
-  createSection,
-  updateSection,
-  deleteSection,
-} = require("../controllers/Section")
 
-// Sub-Sections Controllers Import
-const {
-  createSubSection,
-  updateSubSection,
-  deleteSubSection,
-} = require("../controllers/Subsection")
 
 // Rating Controllers Import
 const {
@@ -57,35 +46,26 @@ const { isDemo } = require("../midddlewares/demo");
 const { auth, isContractor, isWorker, isAdmin } = require("../midddlewares/auth")
 
 // Jobs can Only be Created by Contractors
-router.post("/createJob", auth, isContractor,createJob)
-//Add a Section to a Job
-router.post("/addSection", auth, isContractor, createSection)
-// Update a Section
-router.post("/updateSection", auth, isContractor, updateSection)
-// Delete a Section
-router.delete("/deleteSection", auth, isContractor, deleteSection)
-// Edit Sub Section
-router.post("/updateSubSection", auth, isContractor, updateSubSection)
-// Delete Sub Section
-router.post("/deleteSubSection", auth, isContractor, deleteSubSection)
-// Add a Sub Section to a Section
-router.post("/addSubSection", auth, isContractor, createSubSection)
+router.post("/createJob", auth, isContractor, createJob)
+
 // Get all Registered Jobs
-// router.get("/getAllJobs", getAllJobs)
+router.get("/getAllJobs", showAllJobs)
 // Get Details for a Specific Jobs
 router.post("/getJobDetails", getJobDetails)
 // Edit a Job
-router.post("/editJob", auth, isContractor,isDemo, editJob)
+router.post("/editJob", auth, isContractor, isDemo, editJob)
 // Get all Jobs of a Specific Contractor
 router.get("/getContractorJobs", auth, isContractor, getContractorJobs)
 //Get full Job details
 // router.post("/getFullJobDetails", auth, getFullJobDetails)
 // Delete a Job
-router.delete("/deleteJob",auth,isDemo, deleteJob)
+router.delete("/deleteJob", auth, isDemo, deleteJob)
 // Search Jobs
 // router.post("/searchJob", searchJob);
-//mark lecture as complete
-// router.post("/updateJobProgress", auth, isWorker, markLectureAsComplete);
+// Apply for a Job
+router.post("/applyForJob", auth, isWorker, applyForJob);
+router.post("/acceptApplication", auth, isContractor, require("../controllers/Job").acceptApplication);
+router.post("/rejectApplication", auth, isContractor, require("../controllers/Job").rejectApplication);
 
 
 
@@ -100,7 +80,7 @@ router.get("/getCategoryPageDetails", categoryPageDetails)
 // ********************************************************************************************************
 //                                      Rating and Review
 // ********************************************************************************************************
-router.post("/createRating", auth, isWorker,isDemo, createRating)
+router.post("/createRating", auth, isWorker, isDemo, createRating)
 router.get("/getAverageRating", getAverageRating)
 router.get("/getReviews", getAllRating)
 

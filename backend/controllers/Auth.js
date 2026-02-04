@@ -70,7 +70,7 @@ exports.sendOTP = async (req, res) => {
 exports.signUp = async (req, res) => {
   try {
     //data fetch from body
-    
+
 
     const {
       firstName,
@@ -82,7 +82,7 @@ exports.signUp = async (req, res) => {
       contactNumber,
       otp,
       location,
-      
+
     } = req.body;
 
     //validate data
@@ -94,12 +94,12 @@ exports.signUp = async (req, res) => {
     }
 
     //2 passwords match krlo
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Passwords does not match, try again",
-      });
-    }
+    // if (password !== confirmPassword) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Passwords does not match, try again",
+    //   });
+    // }
 
     //check user already exists or not
     const existingUser = await User.findOne({ email });
@@ -113,9 +113,8 @@ exports.signUp = async (req, res) => {
     //find most recent otp
     const response = await OTP.findOne({ email }).sort({ createdAt: -1 }).limit(1);
 
-    if (response.length === 0) {
+    if (!response) {
       return res.status(400).json({
-        error:error.message,
         success: false,
         message: "OTP not found",
       });
@@ -137,18 +136,18 @@ exports.signUp = async (req, res) => {
       contactNumber: null,
     });
 
-  const user = await User.create({
-  firstName,
-  lastName,
-  email,
-  password: hashedPassword,
-  accountType,
-  additionalDetails: profileDetails._id,
-  contactNumber,
-  image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName}${lastName}`,
-  location, // ✅ Must be included
-  skills: req.body.skills || [], // ✅ Optional if accountType is Worker
-});
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      accountType,
+      additionalDetails: profileDetails._id,
+      contactNumber,
+      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName}${lastName}`,
+      location, // ✅ Must be included
+      skills: req.body.skills || [], // ✅ Optional if accountType is Worker
+    });
 
 
     //return response
@@ -159,11 +158,15 @@ exports.signUp = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this Email or Contact Number",
+      });
+    }
     return res.status(500).json({
       success: false,
-      message: "User cant be registered, please try again later",
-      error: error.message,
+      message: "User cant be registered: " + error.message,
     });
   }
 };

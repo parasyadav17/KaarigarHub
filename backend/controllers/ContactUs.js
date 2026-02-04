@@ -1,3 +1,4 @@
+const Contact = require("../models/Contact");
 const mailSender = require("../utils/mailSender");
 
 exports.contactUs = async (req, res) => {
@@ -9,6 +10,15 @@ exports.contactUs = async (req, res) => {
     });
   }
   try {
+    // Save to Database
+    await Contact.create({
+      firstName,
+      lastName,
+      email,
+      contactNumber: phoneNo,
+      message
+    });
+
     const data = {
       firstName,
       lastName: `${lastName ? lastName : "null"}`,
@@ -17,11 +27,11 @@ exports.contactUs = async (req, res) => {
       phoneNo: `${phoneNo ? phoneNo : "null"}`,
     };
     const info = await mailSender(
-      process.env.CONTACT_MAIL,
-      "Enquery",
+      process.env.CONTACT_MAIL || process.env.MAIL_USER,
+      "Enquiry",
       `<html><body>${Object.keys(data).map((key) => {
-        return `<p>${key} : ${data[key]}</p>`;
-      })}</body></html>`
+        return `<p><strong>${key}:</strong> ${data[key]}</p>`;
+      }).join("")}</body></html>`
     );
     if (info) {
       return res.status(200).send({

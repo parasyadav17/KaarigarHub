@@ -1,10 +1,7 @@
 const Job = require("../models/Job");
 const Category = require("../models/category");
 const User = require("../models/User");
-const Section = require("../models/Section");
-const SubSection = require("../models/SubSection");
 const { uploadImageToCloudinary } = require("../utils/imageUploader");
-const JobProgress = require("../models/JobProgress");
 
 // ===========================
 // CREATE JOB
@@ -12,7 +9,7 @@ const JobProgress = require("../models/JobProgress");
 exports.createJob = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { jobName, jobDescription, whatYouWillDo, rate, categoryId } =
+    const { jobName, jobDescription, whatYouWillDo, rate, categoryId, location } =
       req.body;
     const thumbnail = req.files?.thumbnailImage;
 
@@ -20,9 +17,9 @@ exports.createJob = async (req, res) => {
     if (
       !jobName ||
       !jobDescription ||
-      !whatYouWillDo ||
       !rate ||
       !categoryId ||
+      !location ||
       !thumbnail
     ) {
       return res.status(400).json({
@@ -70,10 +67,12 @@ exports.createJob = async (req, res) => {
       jobName,
       jobDescription,
       contractor: contractorDetails._id,
-      whatYouWillDo,
+      whatYouWillDo: whatYouWillDo || "",
       rate,
+      location,
       category: categoryDetails._id,
       thumbnail: thumbnailImage.secure_url,
+      status: "Open",
     });
 
     // Add job to User and Category
@@ -109,17 +108,7 @@ exports.createJob = async (req, res) => {
 // ===========================
 exports.showAllJobs = async (req, res) => {
   try {
-    const allJobs = await Job.find(
-      {},
-      {
-        jobName: true,
-        rate: true,
-        thumbnail: true,
-        contractor: true,
-        ratingAndReviews: true,
-        workersEnrolled: true,
-      }
-    )
+    const allJobs = await Job.find({})
       .populate("contractor")
       .exec();
 
@@ -152,15 +141,7 @@ exports.getJobDetails = async (req, res) => {
         },
       })
 
-      // .populate("category")
-      // .populate("ratingAndReviews")
-      .populate({
-        path: "jobContent",
-        populate: {
-          path: "subSection",
-          select: "-videoUrl",
-        },
-      })
+
       .exec();
 
     if (!jobDetails) {
@@ -189,9 +170,22 @@ exports.getJobDetails = async (req, res) => {
 exports.getContractorJobs = async (req, res) => {
   try {
     const contractorId = req.user.id;
-    const jobs = await Job.find({ contractor: contractorId }).sort({
-      createdAt: -1,
-    });
+    const jobs = await Job.find({ contractor: contractorId })
+      .populate({
+        path: "applicants",
+        populate: {
+          path: "additionalDetails"
+        }
+      })
+      .populate({
+        path: "workersEnrolled",
+        populate: {
+          path: "additionalDetails"
+        }
+      })
+      .sort({
+        createdAt: -1,
+      });
 
     res.status(200).json({
       success: true,
@@ -275,17 +269,9 @@ exports.deleteJob = async (req, res) => {
       });
     }
 
-    const jobSections = job.jobContent;
-    for (const sectionId of jobSections) {
-      const section = await Section.findById(sectionId);
-      if (section) {
-        const subSections = section.subSection;
-        for (const subSectionId of subSections) {
-          await SubSection.findByIdAndDelete(subSectionId);
-        }
-      }
-      await Section.findByIdAndDelete(sectionId);
-    }
+    // For Job Board, we don't have sections/subsections to delete.
+    // If we had unrelated models linked, we'd clean them here.
+
 
     await Job.findByIdAndDelete(jobId);
 
@@ -300,5 +286,106 @@ exports.deleteJob = async (req, res) => {
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+// ===========================
+// APPLY FOR JOB
+// ===========================
+exports.applyForJob = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { jobId } = req.body;
+
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    if (job.applicants.includes(userId)) {
+      return res.status(400).json({ success: false, message: "Already applied" });
+    }
+
+    job.applicants.push(userId);
+    await job.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Applied successfully",
+      data: job
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ===========================
+// ACCEPT APPLICATION
+// ===========================
+exports.acceptApplication = async (req, res) => {
+  try {
+    const { jobId, applicantId } = req.body;
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Remove from applicants
+    job.applicants = job.applicants.filter(id => id.toString() !== applicantId);
+
+    // Add to workersEnrolled if not already there
+    if (!job.workersEnrolled.includes(applicantId)) {
+      job.workersEnrolled.push(applicantId);
+    }
+
+    await job.save();
+
+    // Add job to Worker's jobs list if not already present (Optional, but good for "My Jobs" for worker)
+    await User.findByIdAndUpdate(applicantId, { $addToSet: { jobs: jobId } });
+
+    return res.status(200).json({
+      success: true,
+      message: "Application accepted",
+      data: job
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ===========================
+// REJECT APPLICATION
+// ===========================
+exports.rejectApplication = async (req, res) => {
+  try {
+    const { jobId, applicantId } = req.body;
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Remove from applicants
+    job.applicants = job.applicants.filter(id => id.toString() !== applicantId);
+
+    // Add to rejectedApplicants if not already there
+    if (!job.rejectedApplicants.includes(applicantId)) {
+      job.rejectedApplicants.push(applicantId);
+    }
+
+    await job.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Application rejected",
+      data: job
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

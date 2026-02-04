@@ -15,6 +15,10 @@ const profileSchema = new mongoose.Schema({
     type:Number,
     trim:true,
   },
+  companyName:{
+    type:String,
+    trim:true,
+  },
 
 
 
