@@ -48,6 +48,22 @@ export const applyForJob = async (jobId) => {
     }
 }
 
+// Get Applied Jobs
+export const getAppliedJobs = async () => {
+    try {
+        const response = await api.get("/job/getAppliedJobs", {
+            headers: {
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response ? error.response.data : error;
+    }
+}
+
 // Accept Application
 export const acceptApplication = async (jobId, applicantId) => {
     try {

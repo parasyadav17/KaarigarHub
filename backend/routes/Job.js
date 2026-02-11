@@ -17,6 +17,7 @@ const {
   // getFullJobDetails,
   deleteJob,
   applyForJob,
+  getAppliedJobs,
   // searchJob,
   // markLectureAsComplete,
 } = require("../controllers/Job")
@@ -64,6 +65,7 @@ router.delete("/deleteJob", auth, isDemo, deleteJob)
 // router.post("/searchJob", searchJob);
 // Apply for a Job
 router.post("/applyForJob", auth, isWorker, applyForJob);
+router.get("/getAppliedJobs", auth, isWorker, getAppliedJobs);
 router.post("/acceptApplication", auth, isContractor, require("../controllers/Job").acceptApplication);
 router.post("/rejectApplication", auth, isContractor, require("../controllers/Job").rejectApplication);
 

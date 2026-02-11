@@ -389,3 +389,27 @@ exports.rejectApplication = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ===========================
+// GET APPLIED JOBS
+// ===========================
+exports.getAppliedJobs = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jobs = await Job.find({ applicants: userId })
+      .populate("contractor")
+      .populate("category")
+      .exec();
+
+    return res.status(200).json({
+      success: true,
+      data: jobs,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch applied jobs",
+      error: error.message,
+    });
+  }
+};

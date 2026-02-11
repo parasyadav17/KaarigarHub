@@ -7,8 +7,16 @@ import FindJobs from './worker/FindJobs';
 import AdminDashboard from './admin/AdminDashboard';
 import { Link, Route, Routes, Navigate } from 'react-router-dom';
 
+import AppliedJobs from './worker/AppliedJobs';
+
 const Dashboard = () => {
     const { user, loading } = useAuth();
+    const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+    const [activeTab, setActiveTab] = React.useState("find-jobs");
+
+    const refreshAppliedJobs = () => {
+        setRefreshTrigger(prev => prev + 1);
+    };
 
     if (loading) return <div>Loading...</div>;
     if (!user) return <Navigate to="/login" />;
@@ -60,8 +68,33 @@ const Dashboard = () => {
                             <div className="absolute right-0 top-0 w-80 h-80 bg-white opacity-10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 animate-blob"></div>
                             <div className="absolute left-0 bottom-0 w-64 h-64 bg-fuchsia-500 opacity-20 rounded-full blur-3xl transform -translate-x-1/2 translate-y-1/2 animate-blob animation-delay-2000"></div>
                         </div>
+                        <div className="flex gap-4 border-b border-gray-200 pb-2">
+                            <button
+                                onClick={() => setActiveTab("find-jobs")}
+                                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "find-jobs"
+                                        ? "text-violet-600 border-b-2 border-violet-600"
+                                        : "text-gray-500 hover:text-gray-700"
+                                    }`}
+                            >
+                                Find Jobs
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("applied-jobs")}
+                                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "applied-jobs"
+                                        ? "text-violet-600 border-b-2 border-violet-600"
+                                        : "text-gray-500 hover:text-gray-700"
+                                    }`}
+                            >
+                                Applied Jobs
+                            </button>
+                        </div>
+
                         <div className="w-full">
-                            <FindJobs />
+                            {activeTab === "find-jobs" ? (
+                                <FindJobs onJobApplied={refreshAppliedJobs} />
+                            ) : (
+                                <AppliedJobs refreshTrigger={refreshTrigger} />
+                            )}
                         </div>
                     </div>
                 )}

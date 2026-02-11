@@ -3,7 +3,7 @@ import { getAllJobs, applyForJob } from '../../services/jobService';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
-const FindJobs = () => {
+const FindJobs = ({ onJobApplied }) => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
@@ -29,7 +29,14 @@ const FindJobs = () => {
         try {
             await applyForJob(jobId);
             toast.success("Applied successfully!");
-            // Optimistic update or refetch
+            if (onJobApplied) onJobApplied();
+
+            // Update local state to reflect change immediately
+            setJobs(prevJobs => prevJobs.map(job =>
+                job._id === jobId
+                    ? { ...job, applicants: [...(job.applicants || []), user._id] }
+                    : job
+            ));
         } catch (error) {
             toast.error(error.message || "Failed to apply");
         }
